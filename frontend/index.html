@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Game</title>
+    <style>
+        .cell {
+            width: 40px;
+            height: 40px;
+            position: relative;
+            display: inline-block;
+            border: 1px solid black;
+            margin: -1px 0 0 -1px;
+        }
+
+        .character {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-image: url('character.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            visibility: hidden; /* Персонаж изначально скрыт */
+        }
+    </style>
+</head>
+<body>
+    <h1>Map Game</h1>
+    <div id="map"></div>
+
+    <script>
+        async function fetchMap() {
+            const response = await fetch("http://127.0.0.1:5000/get_map");
+            const data = await response.json();
+            return data.map;
+        }
+
+        async function move(direction) {
+            const response = await fetch("http://127.0.0.1:5000/move_character", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ direction })
+            });
+            const data = await response.json();
+            displayMap(data.map);
+        }
+
+        function displayMap(map) {
+            const mapElement = document.getElementById("map");
+            mapElement.innerHTML = "";
+            map.forEach(row => {
+                row.forEach(cell => {
+                    const cellElement = document.createElement("div");
+                    cellElement.classList.add("cell");
+
+                    // Добавляем клетку к родительскому элементу
+                    mapElement.appendChild(cellElement);
+
+                    // Создаем элемент персонажа
+                    if (cell === "P") {
+                        const characterElement = document.createElement("div");
+                        characterElement.classList.add("character");
+                        cellElement.appendChild(characterElement); // Добавляем персонажа в клетку
+                    }
+                });
+                mapElement.innerHTML += "<br>";
+            });
+        }
+
+        // Обработчик событий клавиатуры
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "ArrowUp") {
+                move("up");
+            } else if (event.key === "ArrowDown") {
+                move("down");
+            } else if (event.key === "ArrowLeft") {
+                move("left");
+            } else if (event.key === "ArrowRight") {
+                move("right");
+            }
+        });
+
+        // Загружаем карту при загрузке страницы
+        window.onload = async () => {
+            const initialMap = await fetchMap();
+            displayMap(initialMap);
+        };
+    </script>
+</body>
+</html>
+
